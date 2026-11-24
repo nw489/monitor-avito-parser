@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avito Monitor</title>
+
+    <style>
+        /* Основные цвета сайта */
+        :root {
+            --bg: #0f0b1f;
+            --panel: rgba(35, 28, 55, 0.75);
+            --border: rgba(160, 130, 255, 0.25);
+            --text: #f2eefc;
+            --muted: #b8adc9;
+            --accent: #8b5cf6;
+            --accent-dark: #6d42d8;
+            --danger: #ef4444;
+        }
+
+        /* Общие настройки */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background:
+                    radial-gradient(circle at top left, rgba(139, 92, 246, 0.35), transparent 35%),
+                    linear-gradient(135deg, #0f0b1f, #1b1230);
+            padding: 24px;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Эффект стекла */
+        .glass {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Шапка */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .logo-block {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 22px;
+        }
+
+        .title h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .title p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #38d996;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .status-dot.inactive {
+            background: #ef4444;
+        }
+
+        .status-dot.loading {
+            background: #fbbf24;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Панель поиска */
+        .search-panel {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1fr 120px 120px 180px 120px;
+            gap: 12px;
+        }
+
+        input, select, button {
+            font-family: inherit;
+            font-size: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            height: 46px;
+            padding: 0 14px;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        input::placeholder {
+            color: var(--muted);
+        }
+
+        select option {
+            background: #1b1230;
+        }
+
+        button {
+            height: 46px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            transition: 0.25s ease;
+            font-weight: 600;
+            padding: 0 20px;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.35);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-light {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .btn-light:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #b91c1c);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-sound {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            min-width: 44px;
+            font-size: 18px;
+        }
+
+        .btn-sound.on {
+            background: #fbbf24;
+            color: #111;
+            border-color: #fbbf24;
+        }
+
+        /* Спиннер загрузки */
+        .loader {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .loader.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Панель результатов */
+        .results-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+        }
+
+        .counter {
+            color: var(--muted);
+        }
+
+        .counter strong {
+            color: var(--text);
+            font-size: 22px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .sort {
+            width: 180px;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .status-bar .label {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* Сетка карточек */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            overflow: hidden;
+            transition: 0.25s ease;
+            animation: fadeIn 0.4s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(180, 150, 255, 0.55);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 1;
+            background: #10b981;
+            color: #fff;
+        }
+
+        .card .badge.old {
+            background: #6b7280;
+        }
+
+        .photo {
+            height: 170px;
+            background:
+                    linear-gradient(135deg, rgba(139, 92, 246, 0.75), rgba(30, 22, 48, 0.95));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 46px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo .no-image {
+            font-size: 46px;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .price {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            min-height: 46px;
+            font-size: 16px;
+            line-height: 1.35;
+            margin-bottom: 12px;
+        }
+
+        .location {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-link {
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            background: var(--accent);
+            padding: 12px;
+            border-radius: 12px;
+            transition: 0.25s ease;
+        }
+
+        .card-link:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Пустое состояние */
+        .empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            font-size: 18px;
+        }
+
+        .empty .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* Пагинация */
+        .pagination {
+            display: none;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagination.active {
+            display: flex;
+        }
+
+        .page-btn {
+            width: 42px;
+            height: 42px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .page-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .page-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: none;
+        }
+
+        /* Лог событий */
+        .log-panel {
+            padding: 20px;
+        }
+
+        .log-panel h2 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .log-list {
+            display: grid;
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .log-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .log-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .log-list::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        .log-item {
+            color: var(--muted);
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border-left: 3px solid transparent;
+        }
+
+        .log-item.info {
+            border-left-color: var(--accent);
+        }
+
+        .log-item.ok {
+            border-left-color: #10b981;
+            color: #d1fae5;
+        }
+
+        .log-item.err {
+            border-left-color: var(--danger);
+            color: #fca5a5;
+        }
+
+        .log-time {
+            color: var(--accent);
+            margin-right: 8px;
+            font-weight: 600;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 1000px) {
+            .cards {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .search-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .status {
+                width: 100%;
+            }
+
+            .search-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                width: 100%;
+            }
+
+            .actions button,
+            .actions .sort {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .sort {
+                width: 100%;
+            }
+
+            .results-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .status-bar {
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header .logo-block .title p {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main class="page">
+
+    <!-- Шапка сайта -->
+    <header class="header glass">
+        <div class="logo-block">
+            <div class="logo">A</div>
+
+            <div class="title">
+                <h1>Avito Monitor</h1>
+                <p>Мониторинг объявлений в реальном времени</p>
+            </div>
+        </div>
+
+        <div class="status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Готов к работе</span>
+        </div>
+    </header>
+
+    <!-- Поиск -->
+    <section class="search-panel glass">
+        <div class="search-grid">
+            <input id="queryInput" type="text" placeholder="Что ищем? Например: iPhone 13">
+            <input id="priceFromInput" type="number" placeholder="Цена от">
+            <input id="priceToInput" type="number" placeholder="Цена до">
+
+            <select id="citySelect">
+                <option value="Все регионы">Все регионы</option>
+                <option value="Москва">Москва</option>
+                <option value="СПб">Санкт-Петербург</option>
+                <option value="Новосибирск">Новосибирск</option>
+                <option value="Екатеринбург">Екатеринбург</option>
+                <option value="Казань">Казань</option>
+                <option value="Нижний Новгород">Нижний Новгород</option>
+                <option value="Челябинск">Челябинск</option>
+                <option value="Самара">Самара</option>
+                <option value="Омск">Омск</option>
+                <option value="Ростов-на-Дону">Ростов-на-Дону</option>
+                <option value="Уфа">Уфа</option>
+                <option value="Красноярск">Красноярск</option>
+                <option value="Пермь">Пермь</option>
+                <option value="Воронеж">Воронеж</option>
+                <option value="Волгоград">Волгоград</option>
+            </select>
+
+            <button id="searchBtn">Найти</button>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <span>Загрузка объявлений...</span>
+        </div>
+    </section>
+
+    <!-- Результаты и управление -->
+    <section class="results-panel glass">
+        <div class="counter">
+            Найдено: <strong id="count">0</strong>
+        </div>
+
+        <div class="status-bar">
+            <span class="label">Последняя проверка: <span id="lastCheck">—</span></span>
+            <button id="soundBtn" class="btn-sound on" title="Звук при новых объявлениях">🔔</button>
+            <button id="stopBtn" class="btn-danger" style="display:none;">Остановить</button>
+        </div>
+
+        <div class="actions">
+            <select id="sortSelect" class="sort">
+                <option value="price">Сначала дешёвые</option>
+                <option value="date">Сначала новые</option>
+            </select>
+
+            <button id="demoBtn" class="btn-light">Демо</button>
+            <button id="clearBtn" class="btn-light">Очистить</button>
+        </div>
+    </section>
+
+    <!-- Карточки -->
+    <section class="cards" id="cards"></section>
+
+    <!-- Пагинация -->
+    <nav class="pagination" id="pagination"></nav>
+
+    <!-- Лог событий -->
+    <section class="log-panel glass">
+        <h2>📋 Лог событий</h2>
+
+        <div class="log-list" id="logList">
+            <div class="log-item info">
+                <span class="log-time">00:00:00</span>
+                Страница загружена. Введите запрос и нажмите «Найти».
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    // =====================
+    // Конфигурация
+    // =====================
+    const API = window.location.origin;
+    const ITEMS_PER_PAGE = 8;
+    let ads = [];
+    let currentPage = 1;
+    let monitorKey = null;
+    let soundOn = true;
+    let ws = null;
+    let newAdIds = new Set();
+
+    // =====================
+    // DOM-элементы
+    // =====================
+    const $ = id => document.getElementById(id);
+
+    const queryInput = $('queryInput');
+    const priceFromInput = $('priceFromInput');
+    const priceToInput = $('priceToInput');
+    const citySelect = $('citySelect');
+    const searchBtn = $('searchBtn');
+    const sortSelect = $('sortSelect');
+    const demoBtn = $('demoBtn');
+    const clearBtn = $('clearBtn');
+    const stopBtn = $('stopBtn');
+    const soundBtn = $('soundBtn');
+
+    const cards = $('cards');
+    const count = $('count');
+    const loader = $('loader');
+    const pagination = $('pagination');
+    const logList = $('logList');
+    const statusDot = $('statusDot');
+    const statusText = $('statusText');
+    const lastCheck = $('lastCheck');
+
+    // =====================
+    // Вспомогательные функции
+    // =====================
+    function formatPrice(price) {
+        return price.toLocaleString('ru-RU') + ' ₽';
+    }
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        } [c] || c));
+    }
+
+    function getTime() {
+        return new Date().toLocaleTimeString('ru-RU');
+    }
+
+    function addLog(text, type = 'info') {
+        const time = getTime();
+        const item = document.createElement('div');
+        item.className = `log-item ${type}`;
+        item.innerHTML = `<span class="log-time">${time}</span>${text}`;
+        logList.prepend(item);
+
+        // Ограничиваем лог
+        while (logList.children.length > 100) {
+            logList.removeChild(logList.lastChild);
+        }
+    }
+
+    function setStatus(state, text) {
+        statusDot.className = 'status-dot';
+        if (state === 'active') {
+            statusDot.classList.add('active');
+            statusDot.style.background = '#38d996';
+        } else if (state === 'loading') {
+            statusDot.classList.add('loading');
+            statusDot.style.background = '#fbbf24';
+        } else if (state === 'inactive') {
+            statusDot.classList.add('inactive');
+            statusDot.style.background = '#ef4444';
+        } else {
+            statusDot.style.background = '#6b7280';
+        }
+        statusText.textContent = text;
+        stopBtn.style.display = (state === 'active' || state === 'loading') ? 'inline-block' : 'none';
+    }
+
+    // =====================
+    // WebSocket
+    // =====================
+    function connectWs() {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+        ws.onopen = () => {
+            addLog('WebSocket подключён', 'ok');
+        };
+
+        ws.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'new_ads') {
+                    const now = new Date().toISOString();
+
+                    if (msg.initial) {
+                        // Первая загрузка — все объявления СТАРЫЕ
+                        msg.ads.forEach(a => {
+                            if (!ads.find(x => x.id === a.id)) {
+                                ads.push({ ...a, found_at: a.found_at || now });
+                            }
+                        });
+                        newAdIds.clear();
+                        renderAll();
+                        addLog(`Загружено ${msg.count} объявлений`, 'ok');
+                        setStatus('active', 'Мониторинг активен');
+                    } else {
+                        // Новые объявления
+                        let added = 0;
+                        msg.ads.forEach(a => {
+                            if (!ads.find(x => x.id === a.id)) {
+                                ads.push({ ...a, found_at: a.found_at || now });
+                                newAdIds.add(a.id);
+                                added++;
+                            }
+                        });
+                        if (added > 0) {
+                            renderAll();
+                            playBeep();
+                            addLog(`🆕 Добавлено ${added} НОВЫХ объявлений!`, 'ok');
+                        }
+                    }
+                    lastCheck.textContent = getTime();
+                } else if (msg.type === 'heartbeat') {
+                    lastCheck.textContent = getTime();
+                } else if (msg.type === 'error') {
+                    addLog('Ошибка: ' + msg.message, 'err');
+                }
+            } catch (err) {
+                console.error('Ошибка обработки сообщения WS:', err);
+            }
+        };
+
+        ws.onclose = () => {
+            addLog('WebSocket отключён. Переподключение через 3с...', 'warn');
+            setTimeout(connectWs, 3000);
+        };
+    }
+
+    // =====================
+    // Звук
+    // =====================
+    let audioCtx = null;
+
+    function playBeep() {
+        if (!soundOn) return;
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(880, audioCtx.currentTime);
+            o.frequency.setValueAtTime(1175, audioCtx.currentTime + 0.12);
+            g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start();
+            o.stop(audioCtx.currentTime + 0.4);
+        } catch (e) {
+            console.warn('Не удалось воспроизвести звук', e);
+        }
+    }
+
+    soundBtn.onclick = () => {
+        soundOn = !soundOn;
+        soundBtn.textContent = soundOn ? '🔔' : '🔕';
+        soundBtn.classList.toggle('on', soundOn);
+        if (soundOn) playBeep();
+    };
+
+    // =====================
+    // Рендеринг
+    // =====================
+    function getSortedAds() {
+        const sorted = [...ads];
+        if (sortSelect.value === 'price') {
+            sorted.sort((a, b) => a.price - b.price);
+        } else {
+            sorted.sort((a, b) => new Date(b.found_at) - new Date(a.found_at));
+        }
+        return sorted;
+    }
+
+    function renderPagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            pagination.classList.remove('active');
+            return;
+        }
+
+        pagination.classList.add('active');
+        let html = '';
+
+        // Предыдущая
+        html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                html += `<button class="page-btn active" disabled>${i}</button>`;
+            } else if (i <= 3 || i > totalPages - 2 || Math.abs(i - currentPage) <= 1) {
+                html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
+            } else if (i === 4 && currentPage > 5) {
+                html += `<button class="page-btn" disabled>…</button>`;
+            } else if (i === totalPages - 3 && currentPage < totalPages - 4) {
+                html += `<button class="page-btn" disabled>…</button>`;
+            }
+        }
+
+        // Следующая
+        html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
+
+        pagination.innerHTML = html;
+    }
+
+    function goToPage(page) {
+        const totalItems = getSortedAds().length;
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        renderCards();
+    }
+
+    function renderCards() {
+        const sorted = getSortedAds();
+        const totalItems = sorted.length;
+        count.textContent = totalItems;
+
+        if (!totalItems) {
+            cards.innerHTML = `
+                    <div class="empty">
+                        <div class="icon">🔍</div>
+                        Пока ничего нет — введите запрос и нажмите «Найти»
+                    </div>
+                `;
+            pagination.innerHTML = '';
+            pagination.classList.remove('active');
+            return;
+        }
+
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = Math.min(start + ITEMS_PER_PAGE, totalItems);
+        const pageItems = sorted.slice(start, end);
+
+        cards.innerHTML = pageItems.map(a => {
+            const hasImage = a.image_url && a.image_url.trim() !== '';
+            const isNew = newAdIds.has(a.id);
+            return `
+                    <div class="card glass">
+                        <div class="badge ${isNew ? 'new' : 'old'}">${isNew ? 'НОВОЕ' : 'СТАРОЕ'}</div>
+                        <div class="photo">
+                            ${hasImage ? `<img src="${a.image_url}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\\'no-image\\'>📷</span>'">` : '<span class="no-image">📷</span>'}
+                        </div>
+                        <div class="card-body">
+                            <div class="price">${formatPrice(a.price)}</div>
+                            <h3 class="card-title">${escapeHtml(a.title)}</h3>
+                            <div class="location">📍 ${escapeHtml(a.location || '')}</div>
+                            <a href="${a.url}" target="_blank" rel="noopener noreferrer" class="card-link">Открыть объявление →</a>
+                        </div>
+                    </div>
+                `;
+        }).join('');
+
+        renderPagination(totalItems);
+    }
+
+    function renderAll() {
+        currentPage = 1;
+        renderCards();
+    }
+
+    // =====================
+    // Поиск
+    // =====================
+    async function searchOnce() {
+        const query = queryInput.value.trim();
+        const priceFrom = priceFromInput.value ? parseInt(priceFromInput.value) : null;
+        const priceTo = priceToInput.value ? parseInt(priceToInput.value) : null;
+        const city = citySelect.value;
+
+        if (!query) {
+            addLog('⚠️ Введите запрос для поиска', 'err');
+            return;
+        }
+
+        addLog(`🔍 Ищем: "${query}" (цена: ${priceFrom || 'любая'} - ${priceTo || 'любая'}, ${city})...`, 'info');
+        setStatus('loading', 'Поиск...');
+        loader.classList.add('active');
+        cards.innerHTML = '';
+        pagination.classList.remove('active');
+
+        try {
+            const res = await fetch(`${API}/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query,
+                    price_from: priceFrom,
+                    price_to: priceTo,
+                    max_price: priceTo,  // Для обратной совместимости с парсером
+                    city
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                const now = new Date().toISOString();
+                // При ручном поиске все объявления СТАРЫЕ
+                newAdIds.clear();
+                ads = [];
+                data.ads.forEach(a => {
+                    ads.push({ ...a, found_at: a.found_at || now });
+                });
+                renderAll();
+                addLog(`✅ Найдено: ${data.count}, новых: ${data.new_count}`, 'ok');
+                lastCheck.textContent = getTime();
+                setStatus('active', `Мониторинг: "${query}"`);
+                startMonitoring(query, priceFrom, priceTo, city);
+            } else {
+                addLog('❌ Ошибка поиска', 'err');
+                setStatus('inactive', 'Ошибка поиска');
+            }
+        } catch (e) {
+            addLog(`❌ Ошибка: ${e.message}`, 'err');
+            setStatus('inactive', 'Ошибка соединения');
+        } finally {
+            loader.classList.remove('active');
+        }
+    }
+
+    // =====================
+    // Мониторинг
+    // =====================
+    function startMonitoring(query, priceFrom, priceTo, city) {
+        if (monitorKey) {
+            ws.send(JSON.stringify({ type: 'stop_monitoring', key: monitorKey }));
+        }
+        monitorKey = `${query}:${priceFrom}:${priceTo}:${city}`;
+        ws.send(JSON.stringify({
+            type: 'start_monitoring',
+            query,
+            price_from: priceFrom,
+            price_to: priceTo,
+            max_price: priceTo,
+            city
+        }));
+    }
+
+    stopBtn.onclick = () => {
+        if (monitorKey) {
+            ws.send(JSON.stringify({ type: 'stop_monitoring', key: monitorKey }));
+            monitorKey = null;
+        }
+        setStatus('inactive', 'Мониторинг остановлен');
+        addLog('⏹ Мониторинг остановлен', 'info');
+    };
+
+    // =====================
+    // Обработчики кнопок
+    // =====================
+    searchBtn.onclick = searchOnce;
+
+    queryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') searchOnce();
+    });
+
+    priceFromInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') searchOnce();
+    });
+
+    priceToInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') searchOnce();
+    });
+
+    sortSelect.onchange = () => {
+        currentPage = 1;
+        renderCards();
+    };
+
+    clearBtn.onclick = () => {
+        ads = [];
+        newAdIds.clear();
+        currentPage = 1;
+        renderAll();
+        addLog('🧹 Список очищен', 'info');
+        if (monitorKey) {
+            ws.send(JSON.stringify({ type: 'stop_monitoring', key: monitorKey }));
+            monitorKey = null;
+            setStatus('inactive', 'Очищено');
+        }
+    };
+
+    // =====================
+    // Демо-данные
+    // =====================
+    demoBtn.onclick = () => {
+        const now = new Date().toISOString();
+        newAdIds.clear();
+        ads = [
+            { id: 'd1', title: 'iPhone 13 128Gb', price: 35000, url: '#', location: 'Москва', image_url: '', found_at: now },
+            { id: 'd2', title: 'MacBook Air M1', price: 55000, url: '#', location: 'СПб', image_url: '', found_at: now },
+            { id: 'd3', title: 'Samsung Galaxy S23', price: 40000, url: '#', location: 'Новосибирск', image_url: '',
+                found_at: now },
+            { id: 'd4', title: 'iPad Pro 12.9', price: 65000, url: '#', location: 'Екатеринбург', image_url: '',
+                found_at: now },
+            { id: 'd5', title: 'PlayStation 5', price: 48000, url: '#', location: 'Москва', image_url: '', found_at: now },
+            { id: 'd6', title: 'Xbox Series X', price: 42000, url: '#', location: 'СПб', image_url: '', found_at: now },
+            { id: 'd7', title: 'Nintendo Switch OLED', price: 25000, url: '#', location: 'Казань', image_url: '',
+                found_at: now },
+            { id: 'd8', title: 'AirPods Pro 2', price: 15000, url: '#', location: 'Москва', image_url: '', found_at: now },
+            { id: 'd9', title: 'Apple Watch Ultra', price: 38000, url: '#', location: 'СПб', image_url: '',
+                found_at: now },
+            { id: 'd10', title: 'MacBook Pro 14"', price: 120000, url: '#', location: 'Москва', image_url: '',
+                found_at: now },
+        ];
+        newAdIds.add('d1');
+        newAdIds.add('d3');
+        newAdIds.add('d5');
+        newAdIds.add('d7');
+        renderAll();
+        addLog('📊 Загружены демо-данные (помечены НОВЫЕ)', 'ok');
+        playBeep();
+        setStatus('active', 'Демо-режим');
+    };
+
+    // =====================
+    // Инициализация
+    // =====================
+    connectWs();
+    setStatus('inactive', 'Готов к работе');
+
+    // Для обратной совместимости с функциями пагинации
+    window.goToPage = goToPage;
+</script>
+</body>
+</html>
